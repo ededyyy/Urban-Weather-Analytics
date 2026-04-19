@@ -12,6 +12,7 @@ from app.schemas.weather_observation import (
     WeatherObservationCreate,
     WeatherObservationRead,
     WeatherObservationUpdate,
+    WeatherTemperatureStats,
 )
 
 router = APIRouter(prefix="/weather", tags=["weather"])
@@ -42,6 +43,25 @@ def create_observation(
         return weather_crud.create_weather_observation(db, obs)
     except ValueError as e:
         raise _http_from_value_error(e) from e
+
+
+@router.get(
+    "/observations/stats",
+    response_model=WeatherTemperatureStats,
+    summary="Temperature stats for a city",
+)
+def temperature_stats(
+    city: str = Query(..., min_length=1, description="Location name (city)"),
+    db: Session = Depends(get_db),
+) -> WeatherTemperatureStats:
+    """Return average, max, min temperature and total record count for a city."""
+    stats = weather_crud.get_temperature_stats_for_city(db, city)
+    if stats is None or stats.get("count", 0) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"message": f"No observation found for location '{city.strip()}'"},
+        )
+    return stats
 
 
 @router.get(
@@ -132,3 +152,4 @@ def delete_observation(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"message": f"Observation {observation_id} not found"},
         )
+ 

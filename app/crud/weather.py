@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List, Optional, Union
 
-from sqlalchemy import desc
+from sqlalchemy import desc, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -96,6 +96,43 @@ def get_weather_by_city(
         return q.first()
 
     return q.limit(limit).offset(offset).all()
+
+
+def get_temperature_stats_for_city(db: Session, city_name: str) -> dict:
+    """Return aggregate temperature statistics for a city.
+
+    Result keys: `location_name`, `average_temperature_celsius`,
+    `max_temperature_celsius`, `min_temperature_celsius`, `count`.
+    """
+    name = city_name.strip()
+    if not name:
+        return None
+
+    # First check if there are any records for this city
+    cnt = db.query(func.count(WeatherObservation.id)).filter(
+        WeatherObservation.location_name == name
+    ).scalar()
+    if not cnt:
+        return None
+
+    row = (
+        db.query(
+            func.count(WeatherObservation.id),
+            func.avg(WeatherObservation.temperature_celsius),
+            func.max(WeatherObservation.temperature_celsius),
+            func.min(WeatherObservation.temperature_celsius),
+        )
+        .filter(WeatherObservation.location_name == name)
+        .one()
+    )
+    count, avg, maxv, minv = row
+    return {
+        "location_name": name,
+        "average_temperature_celsius": float(avg) if avg is not None else None,
+        "max_temperature_celsius": float(maxv) if maxv is not None else None,
+        "min_temperature_celsius": float(minv) if minv is not None else None,
+        "count": int(count) if count is not None else 0,
+    }
 
 
 def create_weather_observation(

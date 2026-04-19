@@ -47,3 +47,12 @@ class WeatherObservationRead(WeatherObservationBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+
+
+class WeatherTemperatureStats(BaseModel):
+    """Temperature summary for a city."""
+    location_name: str
+    average_temperature_celsius: Optional[float] = None
+    max_temperature_celsius: Optional[float] = None
+    min_temperature_celsius: Optional[float] = None
+    count: int = 0
