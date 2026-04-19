@@ -1,22 +1,115 @@
-# Urban-Weather-Analytics
-Urban climate API for historical weather, air quality, temperature, and city trend analytics
+# Urban Weather Analytics
 
-## Quick start
+A small **FastAPI** service backed by **SQLite** for storing and querying urban weather and air-quality observations. It supports loading historical rows from a CSV (for example a Kaggle-style export), and exposes a JSON **REST API** for full CRUD on weather observations.
 
-Install deps:
+## Project overview
 
-```bash
-pip install -r requirements.txt
-```
+| Area | Description |
+|------|-------------|
+| **API** | FastAPI application in `app/main.py`; weather routes live under `app/routers/weather.py`. |
+| **Data model** | `WeatherObservation` in `app/models/city.py` — country, location, timestamp, temperature, conditions, humidity, UV, PM2.5, PM10, US EPA index. |
+| **Persistence** | SQLAlchemy ORM; default database is SQLite file `urban_weather.db` in the **current working directory** when you run the app (see `app/core/config.py`). |
+| **Bulk import** | `python -m app.db.import_csv --csv <path>` reads CSV columns such as `country`, `location_name`, `last_updated`, and air-quality fields; the importer normalises common missing-value sentinels (for example very large negative placeholders) into NULLs. A small demo CSV is included at `data/example/demo.csv` for quick runnable demos. |
 
-Initialize DB + import CSV:
+## Prerequisites
 
-```bash
-python -m app.db.import_csv --csv "data/raw/kaggle/GlobalWeatherRepository.csv"
-```
+- **Python 3.10+** (3.11 recommended)
 
-Run API:
+## Setup
+
+1. **Clone the repository** and open a terminal in the project root.
+
+2. **Create and activate a virtual environment** (recommended):
+
+   ```bash
+   python -m venv .venv
+   .venv\Scripts\activate
+   ```
+
+3. **Install dependencies:**
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Prepare your CSV**. For quick demos a small sample is included at `data/example/demo.csv`; place larger/full datasets under `data/raw/` (for example `data/raw/kaggle/GlobalWeatherRepository.csv`). The importer expects columns including:
+
+   `country`, `location_name`, `last_updated`, `temperature_celsius`, `condition_text`, `humidity`, `uv_index`, `air_quality_PM2.5`, `air_quality_PM10`, `air_quality_us-epa-index`.
+
+5. **Create tables and import data:**
+
+   ```bash
+   # import the bundled demo CSV (recommended for quick runnable demo)
+   python -m app.db.import_csv --csv data/example/demo.csv
+
+   # or import a larger/full CSV
+   python -m app.db.import_csv --csv "data/raw/kaggle/GlobalWeatherRepository.csv"
+   ```
+
+   This creates `urban_weather.db` (or the file configured via `app/core/config.py`) in the working directory where you run the command.
+
+## Running the API
+
+From the project root:
 
 ```bash
 uvicorn app.main:app --reload
 ```
+
+Default URL: **http://127.0.0.1:8000**
+
+- **Root:** `GET /` — short welcome JSON.
+- **Health:** `GET /health` — `{"status":"ok"}` for uptime checks.
+- **Interactive docs (Swagger UI):** http://127.0.0.1:8000/docs — try all endpoints in the browser.
+- **ReDoc:** http://127.0.0.1:8000/redoc
+- **OpenAPI schema (JSON):** http://127.0.0.1:8000/openapi.json
+
+## Using the API
+
+All weather endpoints are prefixed with **`/api/v1`**. Base URL example: `http://127.0.0.1:8000/api/v1/weather`.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `POST` | `/weather/observations` | Create an observation (JSON body). Returns **201** on success. |
+| `GET` | `/weather/observations/{id}` | Fetch one row by numeric `id`. **404** if missing. |
+| `GET` | `/weather/observations?city=<name>` | List observations for a city (`limit`, `offset` optional). Add `latest=true` for the single newest row (**404** if none). |
+| `PATCH` | `/weather/observations/{id}` | Partial update (JSON body with any subset of fields). |
+| `DELETE` | `/weather/observations/{id}` | Delete a row. **204** with empty body on success; **404** if not found. |
+
+Validation errors return **422** with a JSON `detail` payload. Business rule or duplicate-key issues may return **400** or **409** depending on the case.
+
+### Quick examples
+
+Replace host/port if you deploy elsewhere.
+
+```bash
+curl -s http://127.0.0.1:8000/health
+```
+
+```bash
+curl -s "http://127.0.0.1:8000/api/v1/weather/observations?city=London&limit=5"
+```
+
+```bash
+curl -s -X POST http://127.0.0.1:8000/api/v1/weather/observations ^
+  -H "Content-Type: application/json" ^
+  -d "{\"country\":\"UK\",\"location_name\":\"London\",\"last_updated\":\"2024-05-16T13:15:00\",\"temperature_celsius\":18.5}"
+```
+
+(On PowerShell, escaping quotes in inline JSON can be awkward; using **Swagger UI** at `/docs` is often easier for `POST`/`PATCH`.)
+
+## Brief project layout、
+
+```
+app/
+  main.py              # FastAPI app, router mount, startup DB init
+  routers/weather.py   # HTTP routes
+  crud/weather.py      # Database CRUD logic
+  models/city.py       # SQLAlchemy models
+  schemas/             # Pydantic request/response models
+  db/                  # Engine, sessions, CSV import, init_db
+```
+
+## Licence
+
+See `LICENSE` in the repository.

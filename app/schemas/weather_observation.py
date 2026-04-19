@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class WeatherObservationBase(BaseModel):
@@ -44,7 +44,6 @@ class WeatherObservationUpdate(BaseModel):
 
 class WeatherObservationRead(WeatherObservationBase):
     """For reading records: All fields are included, with `id`."""
-    id: int
+    model_config = ConfigDict(from_attributes=True)
 
-    class Config:
-        orm_mode = True
+    id: int
