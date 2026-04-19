@@ -21,6 +21,42 @@ def _to_datetime(value: object) -> datetime | None:
     return pd.to_datetime(value, errors="coerce").to_pydatetime()
 
 
+def _to_nullable_float(value: object) -> float | None:
+    """Convert a CSV value to float, treating NaN and sentinel values as None.
+
+    The dataset uses -9999 (and similar large negative placeholders) as missing
+    data. Values <= -900 are treated as missing (real surface weather quantities
+    in this export do not use that range).
+    """
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return None
+    try:
+        v = float(value)
+    except Exception:
+        return None
+    if v <= -900:
+        return None
+    return v
+
+
+def _to_nullable_air_quality_float(value: object) -> float | None:
+    """PM2.5 / PM10: concentration cannot be negative; any negative is invalid or sentinel."""
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return None
+    try:
+        v = float(value)
+    except Exception:
+        return None
+    if v < 0:
+        return None
+    return v
+
+
+def _to_nullable_int(value: object) -> int | None:
+    f = _to_nullable_float(value)
+    return None if f is None else int(f)
+
+
 def import_global_weather_csv(
     *,
     csv_path: Path,
@@ -76,17 +112,15 @@ def import_global_weather_csv(
             )
 
             if existing:
-                existing.temperature_celsius = (
-                    float(temperature_celsius) if pd.notna(temperature_celsius) else None
-                )
+                existing.temperature_celsius = _to_nullable_float(temperature_celsius)
                 existing.condition_text = (
                     str(condition_text) if pd.notna(condition_text) else None
                 )
-                existing.humidity = int(humidity) if pd.notna(humidity) else None
-                existing.uv_index = float(uv_index) if pd.notna(uv_index) else None
-                existing.air_quality_pm2_5 = float(pm2_5) if pd.notna(pm2_5) else None
-                existing.air_quality_pm10 = float(pm10) if pd.notna(pm10) else None
-                existing.air_quality_us_epa_index = int(us_epa) if pd.notna(us_epa) else None
+                existing.humidity = _to_nullable_int(humidity)
+                existing.uv_index = _to_nullable_float(uv_index)
+                existing.air_quality_pm2_5 = _to_nullable_air_quality_float(pm2_5)
+                existing.air_quality_pm10 = _to_nullable_air_quality_float(pm10)
+                existing.air_quality_us_epa_index = _to_nullable_int(us_epa)
                 updated += 1
             else:
                 db.add(
@@ -94,17 +128,15 @@ def import_global_weather_csv(
                         country=country,
                         location_name=location_name,
                         last_updated=last_updated,
-                        temperature_celsius=float(temperature_celsius)
-                        if pd.notna(temperature_celsius)
-                        else None,
+                        temperature_celsius=_to_nullable_float(temperature_celsius),
                         condition_text=str(condition_text)
                         if pd.notna(condition_text)
                         else None,
-                        humidity=int(humidity) if pd.notna(humidity) else None,
-                        uv_index=float(uv_index) if pd.notna(uv_index) else None,
-                        air_quality_pm2_5=float(pm2_5) if pd.notna(pm2_5) else None,
-                        air_quality_pm10=float(pm10) if pd.notna(pm10) else None,
-                        air_quality_us_epa_index=int(us_epa) if pd.notna(us_epa) else None,
+                        humidity=_to_nullable_int(humidity),
+                        uv_index=_to_nullable_float(uv_index),
+                        air_quality_pm2_5=_to_nullable_air_quality_float(pm2_5),
+                        air_quality_pm10=_to_nullable_air_quality_float(pm10),
+                        air_quality_us_epa_index=_to_nullable_int(us_epa),
                     )
                 )
                 inserted += 1
