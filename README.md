@@ -1,6 +1,6 @@
 # Urban Weather Analytics
 
-A small **FastAPI** service backed by **SQLite** for storing and querying urban weather and air-quality observations. It supports loading historical rows from a CSV (for example a Kaggle-style export), and exposes a JSON **REST API** for full CRUD on weather observations.
+A small **FastAPI** service backed by **SQLite** for storing and querying urban weather and air-quality observations. It features a specialized CSV ingestion pipeline designed for standardized weather datasets (e.g., Kaggle’s Global Weather Repository), and exposes a JSON **REST API** for full CRUD on weather observations.
 
 ## Project overview
 
@@ -8,7 +8,7 @@ A small **FastAPI** service backed by **SQLite** for storing and querying urban 
 |------|-------------|
 | **API** | FastAPI application in `app/main.py`; weather routes live under `app/routers/weather.py`. |
 | **Data model** | `WeatherObservation` in `app/models/city.py` — country, location, timestamp, temperature, conditions, humidity, UV, PM2.5, PM10, US EPA index. |
-| **Persistence** | SQLAlchemy ORM; default database is SQLite file `urban_weather.db` in the **current working directory** when you run the app (see `app/core/config.py`). |
+| **Persistence** | SQLAlchemy ORM; default database is SQLite file `urban_weather.db` in the **current working directory**. |
 | **Bulk import** | `python -m app.db.import_csv --csv <path>` reads CSV columns such as `country`, `location_name`, `last_updated`, and air-quality fields; the importer normalises common missing-value sentinels (for example very large negative placeholders) into NULLs. A small demo CSV is included at `data/example/demo.csv` for quick runnable demos. |
 
 ## Prerequisites
@@ -39,14 +39,14 @@ A small **FastAPI** service backed by **SQLite** for storing and querying urban 
 5. **Create tables and import data:**
 
    ```bash
-   # import the bundled demo CSV (recommended for quick runnable demo)
+   # import the demo CSV
    python -m app.db.import_csv --csv data/example/demo.csv
 
    # or import a larger/full CSV
    python -m app.db.import_csv --csv "data/raw/kaggle/GlobalWeatherRepository.csv"
    ```
 
-   This creates `urban_weather.db` (or the file configured via `app/core/config.py`) in the working directory where you run the command.
+   This creates `urban_weather.db` in the working directory where you run the command.
 
 ## Running the API
 
@@ -58,6 +58,8 @@ uvicorn app.main:app --reload
 
 Default URL: **http://127.0.0.1:8000**
 
+- **Deployed (Render):** https://urban-weather-analytics.onrender.com
+
 - **Root:** `GET /` — short welcome JSON.
 - **Health:** `GET /health` — `{"status":"ok"}` for uptime checks.
 - **Interactive docs (Swagger UI):** http://127.0.0.1:8000/docs — try all endpoints in the browser.
@@ -68,6 +70,8 @@ Default URL: **http://127.0.0.1:8000**
 
 All weather endpoints are prefixed with **`/api/v1`**. Base URL example: `http://127.0.0.1:8000/api/v1/weather`.
 
+Deployed base URL (Render): `https://urban-weather-analytics.onrender.com/api/v1/weather`
+
 API Doc：[Urban-Weather-Analytics-API.pdf](Urban-Weather-Analytics-API.pdf)
 
 Weather endpoints require **HTTP Basic Auth**.
@@ -75,11 +79,11 @@ Weather endpoints require **HTTP Basic Auth**.
 - Username env var: `API_AUTH_USERNAME` (default: `admin`)
 - Password env var: `API_AUTH_PASSWORD` (default: `admin123`)
 
-If you do not set these variables, use HTTP Basic with username **`admin`** and password **`admin123`** (for example in `curl` with `-u admin:admin123`). Set the env vars only when you want different credentials (including in PowerShell: `$env:API_AUTH_USERNAME="..."` and `$env:API_AUTH_PASSWORD="..."` before starting `uvicorn`).
+To customize these credentials, set the env vars. (PowerShell: `$env:API_AUTH_USERNAME="..."` and `$env:API_AUTH_PASSWORD="..."` before starting `uvicorn`).
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| `POST` | `/weather/observations` | Create an observation (JSON body). Returns **201** on success. |
+| `POST` | `/weather/observations` | Create record. Returns **201** on success. |
 | `GET` | `/weather/observations/{id}` | Fetch one row by numeric `id`. **404** if missing. |
 | `GET` | `/weather/observations?city=<name>` | List observations for a city (`limit`, `offset` optional). Add `latest=true` for the single newest row (**404** if none). |
 | `PATCH` | `/weather/observations/{id}` | Partial update (JSON body with any subset of fields). |
