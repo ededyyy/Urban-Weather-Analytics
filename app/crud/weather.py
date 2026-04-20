@@ -78,6 +78,7 @@ def get_weather_by_city(
     to return only the latest record for the city.
     """
     name = city_name.strip()
+    name_l = name.lower()
     if not name:
         return None if latest else []
 
@@ -88,7 +89,7 @@ def get_weather_by_city(
 
     q = (
         db.query(WeatherObservation)
-        .filter(WeatherObservation.location_name == name)
+        .filter(func.lower(WeatherObservation.location_name) == name_l)
         .order_by(desc(WeatherObservation.last_updated))
     )
 
@@ -105,12 +106,13 @@ def get_temperature_stats_for_city(db: Session, city_name: str) -> dict:
     `max_temperature_celsius`, `min_temperature_celsius`, `count`.
     """
     name = city_name.strip()
+    name_l = name.lower()
     if not name:
         return None
 
     # First check if there are any records for this city
     cnt = db.query(func.count(WeatherObservation.id)).filter(
-        WeatherObservation.location_name == name
+        func.lower(WeatherObservation.location_name) == name_l
     ).scalar()
     if not cnt:
         return None
@@ -122,7 +124,7 @@ def get_temperature_stats_for_city(db: Session, city_name: str) -> dict:
             func.max(WeatherObservation.temperature_celsius),
             func.min(WeatherObservation.temperature_celsius),
         )
-        .filter(WeatherObservation.location_name == name)
+        .filter(func.lower(WeatherObservation.location_name) == name_l)
         .one()
     )
     count, avg, maxv, minv = row

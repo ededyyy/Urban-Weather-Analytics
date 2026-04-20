@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.crud import weather as weather_crud
+from app.core.auth import require_basic_auth
 from app.dependencies import get_db
 from app.models.city import WeatherObservation
 from app.schemas.weather_observation import (
@@ -15,7 +16,14 @@ from app.schemas.weather_observation import (
     WeatherTemperatureStats,
 )
 
-router = APIRouter(prefix="/weather", tags=["weather"])
+router = APIRouter(
+    prefix="/weather",
+    tags=["weather"],
+    dependencies=[Depends(require_basic_auth)],
+    responses={
+        401: {"description": "Unauthorized - invalid authentication credentials"}
+    },
+)
 
 
 def _http_from_value_error(exc: ValueError) -> HTTPException:

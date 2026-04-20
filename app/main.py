@@ -7,6 +7,10 @@ from app.routers import weather as weather_router
 
 app = FastAPI(title="Urban Weather Analytics")
 app.include_router(weather_router.router, prefix="/api/v1")
+# Same routes without the /api/v1 prefix (e.g. /weather/observations); hidden from OpenAPI to avoid duplicates.
+app.include_router(
+    weather_router.router, prefix="", include_in_schema=False
+)
 
 
 @app.on_event("startup")

@@ -68,6 +68,15 @@ Default URL: **http://127.0.0.1:8000**
 
 All weather endpoints are prefixed with **`/api/v1`**. Base URL example: `http://127.0.0.1:8000/api/v1/weather`.
 
+API Doc：[Urban-Weather-Analytics-API.pdf](Urban-Weather-Analytics-API.pdf)
+
+Weather endpoints require **HTTP Basic Auth**.
+
+- Username env var: `API_AUTH_USERNAME` (default: `admin`)
+- Password env var: `API_AUTH_PASSWORD` (default: `admin123`)
+
+If you do not set these variables, use HTTP Basic with username **`admin`** and password **`admin123`** (for example in `curl` with `-u admin:admin123`). Set the env vars only when you want different credentials (including in PowerShell: `$env:API_AUTH_USERNAME="..."` and `$env:API_AUTH_PASSWORD="..."` before starting `uvicorn`).
+
 | Method | Path | Purpose |
 |--------|------|---------|
 | `POST` | `/weather/observations` | Create an observation (JSON body). Returns **201** on success. |
@@ -87,11 +96,15 @@ curl -s http://127.0.0.1:8000/health
 ```
 
 ```bash
-curl -s "http://127.0.0.1:8000/api/v1/weather/observations?city=London&limit=5"
+curl.exe -v -u wrong:wrong "http://localhost:8000/api/v1/weather/observations?city=Tirana"
 ```
 
 ```bash
-curl -s -X POST http://127.0.0.1:8000/api/v1/weather/observations ^
+curl -s -u admin:admin123 "http://127.0.0.1:8000/api/v1/weather/observations?city=London&limit=5"
+```
+
+```bash
+curl -s -u admin:admin123 -X POST http://127.0.0.1:8000/api/v1/weather/observations ^
   -H "Content-Type: application/json" ^
   -d "{\"country\":\"UK\",\"location_name\":\"London\",\"last_updated\":\"2024-05-16T13:15:00\",\"temperature_celsius\":18.5}"
 ```
