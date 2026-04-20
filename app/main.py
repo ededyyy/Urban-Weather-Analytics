@@ -24,3 +24,15 @@ def read_root():
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+# If deploying to PythonAnywhere (WSGI), provide a WSGI callable by
+# wrapping the ASGI `app` with `a2wsgi.ASGIMiddleware`. PythonAnywhere
+# will import `application` from your WSGI config.
+try:
+    from a2wsgi import ASGIMiddleware
+
+    application = ASGIMiddleware(app)
+except Exception:  # pragma: no cover - optional dependency at deploy time
+    # a2wsgi may not be installed in local dev; leave `application` undefined
+    application = None
