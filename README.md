@@ -86,6 +86,7 @@ To customize these credentials, set the env vars. (PowerShell: `$env:API_AUTH_US
 | `POST` | `/weather/observations` | Create record. Returns **201** on success. |
 | `GET` | `/weather/observations/{id}` | Fetch one row by numeric `id`. **404** if missing. |
 | `GET` | `/weather/observations?city=<name>` | List observations for a city (`limit`, `offset` optional). Add `latest=true` for the single newest row (**404** if none). |
+| `GET` | `/weather/observations/stats?city=<name>` | Return aggregate temperature statistics for a city: `average_temperature_celsius`, `max_temperature_celsius`, `min_temperature_celsius`, and `count`. |
 | `PATCH` | `/weather/observations/{id}` | Partial update (JSON body with any subset of fields). |
 | `DELETE` | `/weather/observations/{id}` | Delete a row. **204** with empty body on success; **404** if not found. |
 
