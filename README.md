@@ -62,8 +62,8 @@ Default URL: **http://127.0.0.1:8000**
 
 - **Root:** `GET /` — short welcome JSON.
 - **Health:** `GET /health` — `{"status":"ok"}` for uptime checks.
-- **Interactive docs (Swagger UI):** http://127.0.0.1:8000/docs — try all endpoints in the browser.
-- **ReDoc:** http://127.0.0.1:8000/redoc
+- **Interactive docs (Swagger UI):** http://127.0.0.1:8000/docs (and https://urban-weather-analytics.onrender.com/docs) - try all endpoints in the browser.
+- **ReDoc:** http://127.0.0.1:8000/redoc (and https://urban-weather-analytics.onrender.com/redoc)
 - **OpenAPI schema (JSON):** http://127.0.0.1:8000/openapi.json
 
 ## Using the API
