@@ -13,7 +13,7 @@ A small **FastAPI** service backed by **SQLite** for storing and querying urban 
 
 ## Prerequisites
 
-- **Python 3.10+** (3.11 recommended)
+- **Python 3.9+**
 
 ## Setup
 

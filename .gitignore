@@ -213,6 +213,7 @@ __marimo__/
 
 # ignore large raw data files from Kaggle
 data/raw/kaggle/*.csv
+!data/raw/kaggle/GlobalWeatherRepository.csv
 
 
 # keep example data files for testing and demonstration purposes
